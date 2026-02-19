@@ -1,4 +1,3 @@
-// app.js
 const express = require("express");
 const mongoose = require("mongoose");
 const cors = require("cors");
@@ -13,7 +12,8 @@ const app = express();
 // Middleware
 app.use(cors());
 app.use(express.json());
-app.use("/uploads", express.static("uploads"));
+app.use(express.urlencoded({ extended: true }));
+app.use("/uploads", express.static("uploads")); // serve uploaded files
 
 // MongoDB Connection
 mongoose
@@ -29,4 +29,4 @@ app.get("/", (req, res) => {
 app.use("/api/apartments", apartmentRoutes);
 app.use("/api/inquiries", inquiryRoutes);
 
-module.exports = app;
+module.exports = app; // only needed if imported elsewhere (like server.js)
