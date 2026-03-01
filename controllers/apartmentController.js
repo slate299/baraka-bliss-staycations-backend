@@ -1,5 +1,7 @@
 // controllers/apartmentController.js
 const Apartment = require("../models/Apartment");
+const fs = require("fs");
+const path = require("path");
 
 // =======================
 // GET all apartments
@@ -67,13 +69,22 @@ exports.createApartment = async (req, res) => {
 // UPDATE apartment
 // =======================
 exports.updateApartment = async (req, res) => {
+  // ADD THIS DEBUG BLOCK
+  console.log("=== UPDATE APARTMENT DEBUG ===");
+  console.log("1. Headers content-type:", req.headers["content-type"]);
+  console.log("2. Body keys:", Object.keys(req.body));
+  console.log("3. Files received by Multer:", req.files);
+  console.log("4. Request body:", req.body);
+  console.log("5. Media to remove:", req.body.mediaToRemove); // ADD THIS
+  console.log("==============================");
+
   try {
     const apartment = await Apartment.findById(req.params.id);
     if (!apartment) {
       return res.status(404).json({ message: "Apartment not found" });
     }
 
-    // Update fields if provided
+    // Update basic fields if provided
     apartment.name = req.body.name || apartment.name;
     apartment.city = req.body.city || apartment.city;
     apartment.area = req.body.area || apartment.area;
@@ -82,17 +93,60 @@ exports.updateApartment = async (req, res) => {
     apartment.bedrooms = req.body.bedrooms || apartment.bedrooms;
     apartment.bathrooms = req.body.bathrooms || apartment.bathrooms;
     apartment.maxGuests = req.body.maxGuests || apartment.maxGuests;
-    apartment.amenities = req.body.amenities || apartment.amenities;
     apartment.contact = req.body.contact || apartment.contact;
-    apartment.isAvailable =
-      req.body.isAvailable !== undefined
-        ? req.body.isAvailable
-        : apartment.isAvailable;
 
-    // Optional: handle new uploaded media files
+    // Parse amenities array correctly
+    if (req.body.amenities) {
+      if (Array.isArray(req.body.amenities)) {
+        apartment.amenities = req.body.amenities;
+      } else if (typeof req.body.amenities === "string") {
+        // Split comma-separated string from FormData
+        apartment.amenities = req.body.amenities
+          .split(",")
+          .map((a) => a.trim());
+      }
+    }
+
+    // Convert isAvailable string ("true"/"false") to boolean
+    if (req.body.isAvailable !== undefined) {
+      apartment.isAvailable =
+        req.body.isAvailable === "true" || req.body.isAvailable === true;
+    }
+
+    // 🔥 NEW: Handle media files to remove
+    if (req.body.mediaToRemove) {
+      try {
+        const filesToRemove = JSON.parse(req.body.mediaToRemove);
+        console.log("Files to remove from database:", filesToRemove);
+
+        // Filter out the removed files from mediaFiles array
+        apartment.mediaFiles = apartment.mediaFiles.filter(
+          (media) => !filesToRemove.includes(media),
+        );
+
+        // Optional: Delete physical files from uploads folder
+        const fs = require("fs");
+        const path = require("path");
+
+        filesToRemove.forEach((filePath) => {
+          const fullPath = path.join(__dirname, "..", filePath);
+          if (fs.existsSync(fullPath)) {
+            fs.unlinkSync(fullPath);
+            console.log("Deleted physical file:", fullPath);
+          }
+        });
+      } catch (error) {
+        console.error("Error parsing mediaToRemove:", error);
+      }
+    }
+
+    // Handle new uploaded media files
     if (req.files && req.files.length > 0) {
+      console.log("Files being saved:", req.files);
       const mediaFiles = req.files.map((file) => file.path);
-      apartment.mediaFiles = mediaFiles;
+
+      // IMPORTANT: Append new files to existing ones, don't replace
+      apartment.mediaFiles = [...apartment.mediaFiles, ...mediaFiles];
     }
 
     const updatedApartment = await apartment.save();
