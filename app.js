@@ -30,6 +30,7 @@ const allowedOrigins = [
   "http://localhost:3000",
   "http://localhost:5173",
   "https://hoppscotch.io",
+  "https://baraka-bliss-staycations-frontend.vercel.app",
 ];
 
 const corsOptions = {
