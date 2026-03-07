@@ -47,9 +47,10 @@ const apartmentSchema = new mongoose.Schema(
         trim: true,
       },
     ],
+    // UPDATED: mediaFiles can be either strings (old) or objects (new)
     mediaFiles: [
       {
-        type: String,
+        type: mongoose.Schema.Types.Mixed, // This allows both strings and objects
       },
     ],
     contact: {
