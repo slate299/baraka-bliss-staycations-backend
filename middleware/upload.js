@@ -14,8 +14,19 @@ const storage = new CloudinaryStorage({
   cloudinary: cloudinary,
   params: {
     folder: "baraka-bliss", // Folder name in Cloudinary
-    allowed_formats: ["jpg", "jpeg", "png", "gif", "webp"],
-    transformation: [{ width: 1000, height: 750, crop: "limit" }], // Optional: resize
+    allowed_formats: [
+      "jpg",
+      "jpeg",
+      "png",
+      "gif",
+      "webp",
+      "mp4",
+      "mov",
+      "avi",
+      "mkv",
+    ], // Added video formats
+    resource_type: "auto", // 🔥 CRITICAL: Auto-detect if file is image or video
+    transformation: [{ width: 1000, height: 750, crop: "limit" }], // Optional: resize (images only)
     // Keep the original filename pattern but Cloudinary will handle it
     public_id: (req, file) => {
       const uniqueSuffix = Date.now() + "-" + Math.round(Math.random() * 1e9);
@@ -27,7 +38,7 @@ const storage = new CloudinaryStorage({
 // Create Multer instance with Cloudinary storage
 const upload = multer({
   storage,
-  limits: { fileSize: 10 * 1024 * 1024 }, // Optional: 10MB limit
+  limits: { fileSize: 50 * 1024 * 1024 }, // 🔥 Increased to 50MB for videos
 });
 
 module.exports = upload;
